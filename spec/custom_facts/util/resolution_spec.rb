@@ -1,12 +1,15 @@
 #! /usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../../spec_helper_legacy'
-
 describe Facter::Util::Resolution do
   subject(:resolution) { Facter::Util::Resolution.new(:foo, stub_fact) }
 
   let(:stub_fact) { double('fact', name: :stubfact) }
+  let(:logger) { instance_spy(Facter::Log) }
+
+  before do
+    allow(Facter::Log).to receive(:new).and_return(logger)
+  end
 
   it 'requires a name' do
     expect { Facter::Util::Resolution.new }.to raise_error(ArgumentError)
@@ -30,10 +33,6 @@ describe Facter::Util::Resolution do
   end
 
   describe 'when setting the code' do
-    before do
-      allow(LegacyFacter).to receive(:warnonce)
-    end
-
     it 'creates a block when given a command' do
       resolution.setcode 'foo'
       expect(resolution.code).to be_a_kind_of Proc
@@ -126,7 +125,7 @@ describe Facter::Util::Resolution do
     end
 
     it 'raises a warning if the resolution is evaluated twice' do
-      expect(LegacyFacter).to receive(:warn).with(/Already evaluated foo at.*reevaluating anyways/)
+      expect(logger).to receive(:warn).with(/Already evaluated foo at.*reevaluating anyways/)
 
       resolution.evaluate {}
       resolution.evaluate {}

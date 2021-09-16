@@ -7,11 +7,11 @@ describe Facter do
   let(:type) { :core }
   let(:os_fact) do
     instance_spy(Facter::ResolvedFact, name: fact_name, value: fact_value,
-                                       user_query: fact_user_query, filter_tokens: [], type: type)
+                                       user_query: fact_user_query, type: type)
   end
   let(:missing_fact) do
     instance_spy(Facter::ResolvedFact, name: 'missing_fact', value: nil,
-                                       user_query: 'missing_fact', filter_tokens: [], type: :nil)
+                                       user_query: 'missing_fact', type: :nil)
   end
   let(:empty_fact_collection) { Facter::FactCollection.new }
   let(:logger) { instance_spy(Facter::Log) }
@@ -198,6 +198,13 @@ describe Facter do
   end
 
   describe '#value' do
+    it 'downcases the user query' do
+      mock_fact_manager(:resolve_fact, [os_fact])
+      allow(fact_collection_spy).to receive(:value).with('os.name').and_return('Ubuntu')
+
+      expect(Facter.value('OS.NAME')).to eq('Ubuntu')
+    end
+
     it 'returns a value' do
       mock_fact_manager(:resolve_fact, [os_fact])
       allow(fact_collection_spy).to receive(:value).with('os.name').and_return('Ubuntu')
@@ -212,7 +219,7 @@ describe Facter do
       expect(Facter.value('os.name')).to be nil
     end
 
-    context 'when custom fact with nill value' do
+    context 'when custom fact with nil value' do
       let(:type) { :custom }
       let(:fact_value) { nil }
       let(:fact_user_query) { '' }
@@ -227,6 +234,13 @@ describe Facter do
   end
 
   describe '#fact' do
+    it 'downcases the user query' do
+      mock_fact_manager(:resolve_fact, [os_fact])
+      allow(fact_collection_spy).to receive(:value).with('os.name').and_return('Ubuntu')
+
+      expect(Facter.fact('OS.NAME')).to be_instance_of(Facter::ResolvedFact).and have_attributes(value: 'Ubuntu')
+    end
+
     it 'returns a fact' do
       mock_fact_manager(:resolve_fact, [os_fact])
       allow(fact_collection_spy).to receive(:value).with('os.name').and_return('Ubuntu')
@@ -718,28 +732,19 @@ describe Facter do
 
         Facter.debugonce(message)
 
-        expect(logger).to have_received(:debug).with(message)
-      end
-
-      it 'writes the same debug message only once' do
-        message = 'Some error message'
-
-        Facter.debugonce(message)
-        Facter.debugonce(message)
-
-        expect(logger).to have_received(:debug).once.with(message)
+        expect(logger).to have_received(:debugonce).with(message)
       end
 
       it 'writes empty message when message is nil' do
         Facter.debugonce(nil)
 
-        expect(logger).to have_received(:debug).with('')
+        expect(logger).to have_received(:debugonce).with(nil)
       end
 
       it 'when message is a hash' do
         Facter.debugonce({ warn: 'message' })
 
-        expect(logger).to have_received(:debug).with('{:warn=>"message"}')
+        expect(logger).to have_received(:debugonce).with({ warn: 'message' })
       end
 
       it 'returns nil' do
@@ -748,17 +753,17 @@ describe Facter do
         expect(result).to be_nil
       end
     end
-  end
 
-  context 'when debugging is inactive' do
-    before do
-      allow(logger).to receive(:debug)
-    end
+    context 'when debugging is inactive' do
+      before do
+        allow(logger).to receive(:debug)
+      end
 
-    it 'does not call the logger' do
-      Facter.debugonce('message')
+      it 'does not call the logger' do
+        Facter.debugonce('message')
 
-      expect(logger).not_to have_received(:debug)
+        expect(logger).not_to have_received(:debug)
+      end
     end
   end
 
@@ -784,28 +789,19 @@ describe Facter do
 
       Facter.warnonce(message)
 
-      expect(logger).to have_received(:warn).with(message)
-    end
-
-    it 'writes the same warning message only once' do
-      message = 'Some error message'
-
-      Facter.warnonce(message)
-      Facter.warnonce(message)
-
-      expect(logger).to have_received(:warn).once.with(message)
+      expect(logger).to have_received(:warnonce).with(message)
     end
 
     it 'writes empty message when message is nil' do
       Facter.warnonce(nil)
 
-      expect(logger).to have_received(:warn).with('')
+      expect(logger).to have_received(:warnonce).with(nil)
     end
 
     it 'when message is a hash' do
       Facter.warnonce({ warn: 'message' })
 
-      expect(logger).to have_received(:warn).with('{:warn=>"message"}')
+      expect(logger).to have_received(:warnonce).with({ warn: 'message' })
     end
 
     it 'returns nil' do

@@ -13,8 +13,6 @@ module Facter
   Options.init
   Log.output(STDOUT)
   @already_searched = {}
-  @debug_once = []
-  @warn_once = []
 
   class << self
     # Method used by puppet-agent to retrieve facts
@@ -109,14 +107,20 @@ module Facter
     # @api public
     def clear
       @already_searched = {}
-      @debug_once = []
-      @warn_once = []
+      Facter.clear_messages
       LegacyFacter.clear
       Options[:custom_dir] = []
       LegacyFacter.collection.invalidate_custom_facts
       LegacyFacter.collection.reload_custom_facts
       SessionCache.invalidate_all_caches
       nil
+    end
+
+    # Clears the seen state of debug and warning messages.
+    #
+    # @return [nil]
+    def clear_messages
+      Facter::Log.clear_messages
     end
 
     # Retrieves the value of a core fact. External or custom facts are
@@ -153,13 +157,7 @@ module Facter
     #
     # @api public
     def debugonce(message)
-      return unless debugging?
-
-      message_string = message.to_s
-      return if @debug_once.include? message_string
-
-      @debug_once << message_string
-      logger.debug(message_string)
+      logger.debugonce(message)
       nil
     end
 
@@ -205,6 +203,25 @@ module Facter
     # @api public
     def debugging(debug_bool)
       Facter::Options[:debug] = debug_bool
+    end
+
+    # Check whether http debugging is enabled
+    #
+    # @return [bool]
+    #
+    # @api public
+    def http_debug?
+      Options[:http_debug]
+    end
+
+    # Enable or disable http debugging
+    # @param debug_bool [bool] State which http debugging should have
+    #
+    # @return [type] [description]
+    #
+    # @api public
+    def http_debug(http_debug_bool)
+      Facter::Options[:http_debug] = http_debug_bool
     end
 
     # Enable sequential resolving of facts
@@ -392,7 +409,7 @@ module Facter
     #
     # @api public
     def value(user_query)
-      user_query = user_query.to_s
+      user_query = user_query.to_s.downcase
       resolve_fact(user_query)
 
       @already_searched[user_query]&.value
@@ -409,7 +426,7 @@ module Facter
     #
     # @api public
     def fact(user_query)
-      user_query = user_query.to_s
+      user_query = user_query.to_s.downcase
       resolve_fact(user_query)
 
       @already_searched[user_query]
@@ -482,11 +499,7 @@ module Facter
     #
     # @api public
     def warnonce(message)
-      message_string = message.to_s
-      return if @warn_once.include? message_string
-
-      @warn_once << message_string
-      logger.warn(message_string)
+      logger.warnonce(message)
       nil
     end
 
@@ -555,7 +568,7 @@ module Facter
       begin
         value = fact_collection.value(user_query)
         add_fact_to_searched_facts(user_query, value)
-      rescue KeyError
+      rescue KeyError, TypeError
         nil
       end
     end

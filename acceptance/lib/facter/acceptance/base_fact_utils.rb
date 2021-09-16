@@ -146,6 +146,10 @@ module Facter
           os_arch                 = 'aarch64'
           os_hardware             = 'aarch64'
           processor_model_pattern = // # aarch64 does not populate a model value in /proc/cpuinfo
+        elsif agent['platform'] =~ /ppc64le/
+          os_arch                 = 'ppc64le'
+          os_hardware             = 'ppc64le'
+          processor_model_pattern = /(POWER.*)/
         else
           os_arch                 = 'i386'
           os_hardware             = 'i686'
@@ -219,12 +223,8 @@ module Facter
 
       # osx
       def osx_expected_facts(agent)
-        version = agent['platform'].match(/osx-(10\.\d+)/)
-        os_version = if version.nil?
-                       /\d+\.\d+/
-                     else
-                       /#{version[1]}/
-                     end
+        version = agent['platform'].match(/osx-(\d+)\.?(\d+)?/)
+        major_version = /#{Regexp.escape(version.captures.compact.join('.'))}/
 
         expected_facts = {
           'os.architecture' => 'x86_64',
@@ -232,9 +232,8 @@ module Facter
           'os.hardware' => 'x86_64',
           'os.name' => 'Darwin',
           'os.macosx.build' => /\d+[A-Z]\d{1,4}\w?/,
-          'os.macosx.product' => agent['platform'] =~ /osx-11-/ ? 'macOS' : 'Mac OS X',
-          'os.macosx.version.full' => /#{os_version}\.\d+/,
-          'os.macosx.version.major' => os_version,
+          'os.macosx.product' => agent['platform'] =~ /osx-10/ ? 'Mac OS X' : 'macOS',
+          'os.macosx.version.major' => major_version,
           'os.macosx.version.minor' => /\d+/,
           'os.release.full' => /\d+\.\d+\.\d+/,
           'os.release.major' => /\d+/,
@@ -248,6 +247,13 @@ module Facter
           'kernelversion' => /\d+\.\d+\.\d+/,
           'kernelmajversion' => /\d+\.\d+/
         }
+
+        if agent['platform'] =~ /osx-10/
+          expected_facts['os.macosx.version.full'] = /#{expected_facts['os.macosx.version.major']}\.#{expected_facts['os.macosx.version.minor']}/
+        else
+          expected_facts['os.macosx.version.patch'] = /\d+/
+          expected_facts['os.macosx.version.full'] = /^#{expected_facts['os.macosx.version.major']}\.#{expected_facts['os.macosx.version.minor']}\.#{expected_facts['os.macosx.version.patch']}$/
+        end
         expected_facts
       end
 
