@@ -69,6 +69,7 @@ Metrics/AbcSize:
     - 'lib/facter/custom_facts/core/execution/popen3.rb'
     - 'lib/facter.rb'
     - 'lib/facter/framework/parsers/query_parser.rb'
+    - 'lib/facter/framework/core/fact_manager.rb'
 
 Metrics/PerceivedComplexity:
   Exclude:
@@ -102,6 +103,8 @@ Metrics/ClassLength:
     - 'install.rb'
     - 'scripts/generate_changelog.rb'
     - 'lib/facter/resolvers/solaris/networking.rb'
+    - 'lib/facter/framework/logging/logger.rb'
+    - 'lib/facter/framework/core/fact_manager.rb'
 
 Naming/AccessorMethodName:
   Exclude:
@@ -139,7 +142,6 @@ Style/ClassVars:
 Style/FrozenStringLiteralComment:
   Exclude:
     - 'spec/custom_facts/util/normalization_spec.rb'
-    - 'spec/custom_facts/shared_contexts/platform.rb'
     - 'spec/custom_facts/core/execution/windows_spec.rb'
     - 'spec/custom_facts/core/execution/posix_spec.rb'
     - 'lib/facter/custom_facts/util/resolution.rb'
