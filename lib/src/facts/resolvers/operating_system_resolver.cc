@@ -171,7 +171,6 @@ namespace facter { namespace facts { namespace resolvers {
             if (pos != string::npos) {
                 string major = data.osx.version.substr(0, pos);
                 string minor = data.osx.version.substr(pos + 1);
-
                 // If the major doesn't have a '.', treat the entire version as the major
                 // and use a minor of "0"
                 if (major.find('.') == string::npos) {
